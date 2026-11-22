@@ -1,5 +1,7 @@
 """Streamlit dashboard for Indian NSE sector analysis."""
 
+import os
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -12,7 +14,26 @@ from src.config import (
     INTERVALS,
     SECTORS,
 )
+from src.data.angel_one.auth import AngelOneAuthError, AngelOneSmartAPI
 from src.data.yahoo_provider import fetch_market_data
+
+
+def _secret(name: str) -> str:
+    """Read a secret from environment variables or local Streamlit secrets."""
+    value = os.getenv(name)
+    if value:
+        return value.strip()
+    try:
+        value = st.secrets.get(name, "")
+    except Exception:
+        value = ""
+    return str(value).strip() if value else ""
+
+
+def _masked_client_code(client_code: str) -> str:
+    if len(client_code) <= 4:
+        return "*" * len(client_code)
+    return f"{client_code[:2]}{'*' * (len(client_code) - 4)}{client_code[-2:]}"
 
 
 st.set_page_config(
@@ -40,10 +61,84 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    st.markdown("**Coverage**")
+    st.subheader("Angel One SmartAPI")
+
+    api_key = _secret("ANGELONE_API_KEY")
+    client_code = _secret("ANGELONE_CLIENT_CODE")
+    pin = _secret("ANGELONE_PIN")
+    public_ip = _secret("ANGELONE_CLIENT_PUBLIC_IP") or None
+    credentials_ready = bool(api_key and client_code and pin)
+
+    if not credentials_ready:
+        st.warning(
+            "Local SmartAPI credentials are not configured. Copy "
+            ".streamlit/secrets.toml.example to "
+            ".streamlit/secrets.toml and fill it on this computer."
+        )
+
+    active_client = st.session_state.get("angel_one_client")
+    if active_client is not None and active_client.is_authenticated:
+        st.success(
+            f"Connected · {_masked_client_code(client_code or 'account')}"
+        )
+        if st.button("Disconnect Angel One", use_container_width=True):
+            try:
+                active_client.logout()
+            except AngelOneAuthError as exc:
+                st.warning(str(exc))
+            finally:
+                st.session_state.pop("angel_one_client", None)
+                st.rerun()
+    elif credentials_ready:
+        with st.form("angel_one_login", clear_on_submit=True):
+            totp = st.text_input(
+                "Current 6-digit TOTP",
+                type="password",
+                max_chars=6,
+                help="Enter the current code from your authenticator app.",
+            )
+            submitted = st.form_submit_button(
+                "Connect to Angel One",
+                use_container_width=True,
+            )
+        if submitted:
+            try:
+                client = AngelOneSmartAPI(
+                    api_key,
+                    client_code,
+                    public_ip=public_ip,
+                )
+                profile = client.login(pin, totp)
+                profile_data = profile.get("data") or {}
+                verified_code = str(profile_data.get("clientcode") or client_code)
+                st.session_state["angel_one_client"] = client
+                st.session_state["angel_one_verified_account"] = _masked_client_code(
+                    verified_code
+                )
+                st.success(
+                    "SmartAPI login and protected profile check succeeded. "
+                    f"Account: {_masked_client_code(verified_code)}"
+                )
+                st.rerun()
+            except AngelOneAuthError as exc:
+                st.error(str(exc))
+            except Exception:
+                # Do not show arbitrary exception details, which could contain
+                # request metadata or provider response material.
+                st.error(
+                    "Angel One connection failed unexpectedly. "
+                    "Check local configuration and retry."
+                )
+
+    st.divider()
+    st.markdown("**Market-data provider**")
+    st.write("Yahoo Finance prototype")
+    st.caption(
+        "SmartAPI authentication is now separate from market-data loading. "
+        "Angel One historical candles and live streaming are the next integration steps."
+    )
     st.write(f"Benchmark: {BENCHMARK_NAME}")
     st.write(f"Configured sectors: {len(SECTORS)}")
-    st.caption("Data source: Yahoo Finance through yfinance.")
 
 
 @st.cache_data(ttl=60, show_spinner=False)
