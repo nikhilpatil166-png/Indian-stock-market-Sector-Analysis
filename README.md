@@ -1,114 +1,106 @@
 # Indian Stock Market Sector Analysis
 
-A data-driven project to study Indian stock-market sectors, compare their strength against the NIFTY 50, and identify which sectors are leading, weakening, or moving sideways.
+A Streamlit dashboard for comparing NSE sector indices with the NIFTY 50 benchmark. The project is being developed in stages: sector analytics, broker-backed historical data, and eventually real-time intraday market updates.
 
-> **Project status:** Initial setup. The first version will focus on reliable daily sector analysis. Intraday analysis and alerts can be added after the core calculations are tested.
+> **Current status:** SmartAPI authentication and protected-profile verification are implemented on the feature branch. The dashboard's market-data display still uses the Yahoo Finance prototype until Angel One historical candles are integrated and tested.
 
-## What this project should answer
+## Current dashboard
 
-- Which NSE sectors are outperforming or underperforming the NIFTY 50?
-- Which sectors have the strongest trend and momentum?
-- Is a sector's move supported by participation across its constituent stocks?
-- Which stocks are leading or dragging each sector?
-- Is sector strength improving, fading, or changing direction?
+- Daily, 5-minute, and 15-minute prototype views.
+- NIFTY 50 benchmark overview.
+- Sector returns over 1/5/20 observations.
+- Relative strength versus NIFTY 50, expressed in percentage points.
+- 20-period and 50-period moving-average status.
+- Sector ranking and index close/average chart.
 
-## First version (MVP)
+## Angel One SmartAPI authentication
 
-The first working version should provide:
+The current feature branch adds:
 
-1. **Market overview** — NIFTY 50 and available NSE sector indices.
-2. **Sector performance** — daily, weekly, and monthly percentage change.
-3. **Relative strength** — each sector's performance compared with NIFTY 50.
-4. **Trend view** — price versus 20-day and 50-day moving averages.
-5. **Sector ranking** — leaders, improving sectors, weak sectors, and laggards.
-6. **Constituent breadth** — advancing versus declining stocks, where constituent data is available.
-7. **Charts and tables** — simple visual summaries with the data timestamp and source shown.
+- Login using API key, client code, PIN, and current 6-digit TOTP.
+- Protected profile call to verify the session.
+- In-memory JWT, refresh token, and feed token handling.
+- Token-refresh method for later authenticated data calls.
+- Explicit logout and local token clearing.
+- No broker secrets, TOTP values, or session tokens in source control or application logs.
+- TLS certificate verification enabled.
 
-Intraday 5-minute/15-minute analysis, alerts, and broker integration are later milestones, not part of the first version.
+### Configure locally
 
-## Suggested technology
+Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and fill in your own API key, client code, and PIN. The real secrets file is excluded by `.gitignore`.
 
-- **Python** for calculations and data processing.
-- **Pandas / NumPy** for market data and indicators.
-- **Streamlit** for a simple interactive dashboard.
-- **Plotly** for charts.
-- **Pytest** for testing calculations.
+The current TOTP is entered in the Streamlit sidebar when connecting. The TOTP is not saved to disk. See [ANGEL_ONE_SETUP.md](ANGEL_ONE_SETUP.md) for instructions.
 
-Keep market-data collection separate from analysis. This makes it possible to change data providers without rewriting the sector-strength calculations.
+### Authentication scope
 
-## Data approach
+This is authentication and a connection test only. It does not place orders. The current Yahoo Finance prototype remains the dashboard's market-data source until the historical-candle adapter is implemented in the next milestone.
 
-Start with CSV files that can be downloaded or exported from a legitimate data source. This lets us validate the calculations before depending on a live feed.
+## Technology
 
-Later, connect a documented and permitted market-data API. Record the source, exchange, interval, and last-updated time for every dataset. Do not commit API keys, broker credentials, cookies, or other secrets to GitHub.
+- Python 3.10+
+- Streamlit
+- Pandas / NumPy
+- Plotly
+- yfinance (temporary prototype feed)
+- requests (direct SmartAPI HTTPS client)
+- Pytest and GitHub Actions
 
-## Proposed project structure
-
-```text
-Indian-stock-market-Sector-Analysis/
-├── app.py                  # Streamlit dashboard entry point
-├── requirements.txt        # Python dependencies
-├── README.md
-├── data/
-│   └── sample/             # Small, non-sensitive sample datasets
-├── src/
-│   ├── data/
-│   │   └── loader.py       # Load and validate market data
-│   ├── analysis/
-│   │   ├── performance.py  # Returns and relative strength
-│   │   ├── trend.py        # Moving averages and trend state
-│   │   └── breadth.py      # Advancers / decliners
-│   └── config.py           # Sector and benchmark configuration
-└── tests/
-    ├── test_performance.py
-    └── test_trend.py
-```
-
-## Build roadmap
-
-### Phase 1 — Foundation
-- Set up the Python project and dependencies.
-- Decide the initial list of NSE sector indices and benchmark.
-- Define a consistent CSV format and validate dates, symbols, and missing values.
-
-### Phase 2 — Core analysis
-- Calculate 1-day, 5-day, and 20-day returns.
-- Calculate relative strength versus NIFTY 50.
-- Add 20-day and 50-day moving-average trend states.
-- Rank sectors and test the calculations on known sample data.
-
-### Phase 3 — Dashboard
-- Add sector ranking tables and performance charts.
-- Show leading and lagging sectors.
-- Display data source and last-updated timestamp.
-
-### Phase 4 — Breadth and intraday
-- Add constituent-level breadth and sector leaders/laggards.
-- Add 5-minute and 15-minute views only when reliable intraday data is available.
-- Consider notifications after the analysis has been validated.
-
-## Initial analysis rules (to be tested, not treated as trading signals)
-
-- **Relative strength:** sector return minus NIFTY 50 return over the same period.
-- **Positive trend:** close above the selected moving averages.
-- **Improving sector:** relative strength is rising across consecutive observations.
-- **Breadth confirmation:** a larger share of constituent stocks is advancing.
-
-These are analytical measures, not guaranteed buy/sell signals. Any trading use needs independent validation, risk management, and testing across different market conditions.
-
-## Run locally (after the application files are added)
+## Run locally
 
 ```bash
+git clone https://github.com/nikhilpatil166-png/Indian-stock-market-Sector-Analysis.git
+cd Indian-stock-market-Sector-Analysis
 python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS / Linux:
-source .venv/bin/activate
+```
 
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+macOS / Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+Install and start:
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Important
+Run tests:
 
-This project is for market research and educational analysis. Market data can be delayed, incomplete, revised, or unavailable. It is not investment advice and should not place trades automatically.
+```bash
+pytest -q
+```
+
+## Data provider notes
+
+The prototype provider is in `src/data/yahoo_provider.py`. It is not an official NSE feed or a guaranteed real-time source. Replace it with a licensed or broker-provided source for production or trading use.
+
+The Angel One auth client is in `src/data/angel_one/auth.py`. Historical candle retrieval and WebSocket live streaming are planned follow-on integrations.
+
+## Security
+
+- Keep real credentials in local Streamlit secrets or environment variables.
+- Never commit `.streamlit/secrets.toml`, API keys, PINs, TOTP seeds/codes, cookies, or access tokens.
+- JWT, refresh, and feed tokens are held only in the running process memory.
+- Do not add order placement or automated trading without a separate security and risk-control review.
+
+## Roadmap
+
+1. **Foundation:** dashboard, prototype provider, sector relative-strength calculations, tests.
+2. **SmartAPI authentication:** secure login, protected profile test, in-memory token management.
+3. **Historical market data:** instrument-master mapping and 1D/5m/15m candle retrieval from Angel One.
+4. **Live market data:** WebSocket V2, tick normalization, 5-minute/15-minute candle builder.
+5. **Sector intelligence:** breadth, leaders/laggards, relative-strength rotation.
+6. **Intraday research:** VWAP, opening range, relative volume, and validated alerts.
+
+## Disclaimer
+
+This project is for research and educational purposes. It is not investment advice, does not guarantee real-time prices, and must not be used as the sole basis for trading decisions. Verify prices with your broker or licensed data provider.
