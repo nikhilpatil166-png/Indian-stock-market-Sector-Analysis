@@ -12,9 +12,9 @@ Create a folder named `.streamlit` in the project root. Copy
 
 Fill these values locally:
 
-- `ANGELONE_API_KEY`: API key from your SmartAPI app.
-- `ANGELONE_CLIENT_CODE`: your Angel One client code.
-- `ANGELONE_PIN`: your Angel One login PIN.
+- `R77Z2USYVIXTN6LZLWCFBDNQRU`: API key from your SmartAPI app.
+- `N296645`: your Angel One client code.
+- `1991`: your Angel One login PIN.
 
 Never commit the real `.streamlit/secrets.toml` file. It is ignored by
 `.gitignore`. Do not paste credentials or OTPs into GitHub issues, pull
