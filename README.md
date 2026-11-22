@@ -1,114 +1,117 @@
 # Indian Stock Market Sector Analysis
 
-A data-driven project to study Indian stock-market sectors, compare their strength against the NIFTY 50, and identify which sectors are leading, weakening, or moving sideways.
+A Streamlit dashboard for comparing NSE sector indices with the NIFTY 50 benchmark. The first milestone supports daily, 5-minute, and 15-minute views, sector-relative strength, moving-average trend context, and a configurable market-data adapter.
 
-> **Project status:** Initial setup. The first version will focus on reliable daily sector analysis. Intraday analysis and alerts can be added after the core calculations are tested.
+> **Status:** First working dashboard milestone. The default provider is Yahoo Finance through the community-maintained `yfinance` library. It is a prototype data source, not an official NSE feed or a guaranteed real-time feed.
 
-## What this project should answer
+## Dashboard capabilities
 
-- Which NSE sectors are outperforming or underperforming the NIFTY 50?
-- Which sectors have the strongest trend and momentum?
-- Is a sector's move supported by participation across its constituent stocks?
-- Which stocks are leading or dragging each sector?
-- Is sector strength improving, fading, or changing direction?
+- Daily, 5-minute, and 15-minute index history.
+- NIFTY 50 benchmark overview.
+- Sector returns over 1/5/20 observations.
+- Relative strength versus NIFTY 50, expressed in percentage points.
+- 20-period and 50-period moving-average status.
+- Sector ranking and an index close/average chart.
+- Per-symbol provider warnings when an index history is unavailable.
+- Unit tests for the analysis calculations and GitHub Actions CI.
 
-## First version (MVP)
+For daily data, the 1/5/20 observations represent 1 day, 1 week, and roughly 1 month of trading sessions. For intraday data, they mean 1/5/20 candles, not days.
 
-The first working version should provide:
+## Supported sector universe
 
-1. **Market overview** — NIFTY 50 and available NSE sector indices.
-2. **Sector performance** — daily, weekly, and monthly percentage change.
-3. **Relative strength** — each sector's performance compared with NIFTY 50.
-4. **Trend view** — price versus 20-day and 50-day moving averages.
-5. **Sector ranking** — leaders, improving sectors, weak sectors, and laggards.
-6. **Constituent breadth** — advancing versus declining stocks, where constituent data is available.
-7. **Charts and tables** — simple visual summaries with the data timestamp and source shown.
+The initial configuration includes NIFTY Auto, Bank, Energy, Financial Services, FMCG, IT, Media, Metal, Pharma, PSU Bank, Realty, and Infrastructure. The NIFTY 50 (`^NSEI`) is the benchmark.
 
-Intraday 5-minute/15-minute analysis, alerts, and broker integration are later milestones, not part of the first version.
+Symbols are configured in `src/config.py`. Market-data vendors sometimes rename, remove, or fail to serve individual index symbols. The dashboard reports missing symbols rather than treating a missing value as zero.
 
-## Suggested technology
+## Technology
 
-- **Python** for calculations and data processing.
-- **Pandas / NumPy** for market data and indicators.
-- **Streamlit** for a simple interactive dashboard.
-- **Plotly** for charts.
-- **Pytest** for testing calculations.
+- Python 3.10+
+- Streamlit
+- Pandas and NumPy
+- Plotly
+- yfinance (Yahoo Finance chart data)
+- Pytest and GitHub Actions
 
-Keep market-data collection separate from analysis. This makes it possible to change data providers without rewriting the sector-strength calculations.
+## Run locally
 
-## Data approach
-
-Start with CSV files that can be downloaded or exported from a legitimate data source. This lets us validate the calculations before depending on a live feed.
-
-Later, connect a documented and permitted market-data API. Record the source, exchange, interval, and last-updated time for every dataset. Do not commit API keys, broker credentials, cookies, or other secrets to GitHub.
-
-## Proposed project structure
-
-```text
-Indian-stock-market-Sector-Analysis/
-├── app.py                  # Streamlit dashboard entry point
-├── requirements.txt        # Python dependencies
-├── README.md
-├── data/
-│   └── sample/             # Small, non-sensitive sample datasets
-├── src/
-│   ├── data/
-│   │   └── loader.py       # Load and validate market data
-│   ├── analysis/
-│   │   ├── performance.py  # Returns and relative strength
-│   │   ├── trend.py        # Moving averages and trend state
-│   │   └── breadth.py      # Advancers / decliners
-│   └── config.py           # Sector and benchmark configuration
-└── tests/
-    ├── test_performance.py
-    └── test_trend.py
-```
-
-## Build roadmap
-
-### Phase 1 — Foundation
-- Set up the Python project and dependencies.
-- Decide the initial list of NSE sector indices and benchmark.
-- Define a consistent CSV format and validate dates, symbols, and missing values.
-
-### Phase 2 — Core analysis
-- Calculate 1-day, 5-day, and 20-day returns.
-- Calculate relative strength versus NIFTY 50.
-- Add 20-day and 50-day moving-average trend states.
-- Rank sectors and test the calculations on known sample data.
-
-### Phase 3 — Dashboard
-- Add sector ranking tables and performance charts.
-- Show leading and lagging sectors.
-- Display data source and last-updated timestamp.
-
-### Phase 4 — Breadth and intraday
-- Add constituent-level breadth and sector leaders/laggards.
-- Add 5-minute and 15-minute views only when reliable intraday data is available.
-- Consider notifications after the analysis has been validated.
-
-## Initial analysis rules (to be tested, not treated as trading signals)
-
-- **Relative strength:** sector return minus NIFTY 50 return over the same period.
-- **Positive trend:** close above the selected moving averages.
-- **Improving sector:** relative strength is rising across consecutive observations.
-- **Breadth confirmation:** a larger share of constituent stocks is advancing.
-
-These are analytical measures, not guaranteed buy/sell signals. Any trading use needs independent validation, risk management, and testing across different market conditions.
-
-## Run locally (after the application files are added)
+### 1. Clone the repository
 
 ```bash
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS / Linux:
-source .venv/bin/activate
+git clone https://github.com/nikhilpatil166-png/Indian-stock-market-Sector-Analysis.git
+cd Indian-stock-market-Sector-Analysis
+```
 
+### 2. Create and activate a virtual environment
+
+Windows PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+macOS / Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
+```
+
+### 4. Start the dashboard
+
+```bash
 streamlit run app.py
 ```
 
-## Important
+Streamlit prints a local URL, usually `http://localhost:8501`.
 
-This project is for market research and educational analysis. Market data can be delayed, incomplete, revised, or unavailable. It is not investment advice and should not place trades automatically.
+### 5. Run the tests
+
+```bash
+pytest -q
+```
+
+## Data-provider notes
+
+The provider implementation lives in `src/data/yahoo_provider.py`. Analysis logic is deliberately separated in `src/analysis/metrics.py`, so a different provider can be added without rewriting the dashboard calculations.
+
+The yfinance project states that it is not affiliated with, endorsed by, or vetted by Yahoo, and that Yahoo Finance API access is intended for personal use. Read the [yfinance documentation and disclaimer](https://ranaroussi.github.io/yfinance/) and applicable Yahoo terms before using downloaded data.
+
+The yfinance reference documents intraday intervals such as 5m and 15m and notes that intraday data cannot extend beyond the most recent 60 days. This prototype requests only the latest 5 days for intraday views. Data may be delayed, incomplete, unavailable, or rate-limited.
+
+For dependable production or trading use, replace this prototype provider with a licensed market-data service or your broker's documented market-data API. Do not scrape exchange websites or assume a public endpoint provides an execution-grade feed.
+
+## Security
+
+- No API key is required by the current prototype provider.
+- Never commit broker access tokens, API keys, passwords, cookies, or `.env` files.
+- Keep future provider credentials in environment variables or Streamlit secrets.
+- Do not add order placement or automated trading to this dashboard without a separate security and risk-control design.
+
+## Calculation definitions
+
+- **Return:** percentage change between the latest close and the close N observations earlier.
+- **Relative strength:** sector return minus NIFTY 50 return over the same observations. A positive result means the sector outperformed the benchmark over that window; it does not predict future returns.
+- **Trend context:** latest close above or below its 20-period and 50-period simple moving averages.
+
+The first milestone does not yet calculate constituent breadth, sector-weighted stock contribution, institutional flows, or buy/sell signals.
+
+## Roadmap
+
+1. **Foundation (this milestone):** data adapter, daily/intraday dashboard, relative strength, moving averages, tests, CI.
+2. **Data quality:** verify all index symbols and timestamps against a selected licensed provider; add retries and caching.
+3. **Sector breadth:** constituent lists, advancing/declining participation, and leading/lagging stocks.
+4. **Sector rotation:** multi-week strength/momentum quadrants and historical rotation trails.
+5. **Intraday research:** opening range, VWAP context, and 5/15-minute strength filters after feed reliability is established.
+6. **Alerts:** configurable notifications after metrics have been validated.
+
+## Disclaimer
+
+This project is for research and educational purposes. It is not investment advice, does not guarantee real-time prices, and must not be used as the sole basis for trading decisions. Verify all prices and signals with an appropriate, licensed source.
